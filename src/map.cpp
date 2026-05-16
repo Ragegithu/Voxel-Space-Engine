@@ -12,10 +12,10 @@ Map::Map()
 
 
 
-	loadImageArray(heightMapImg,heightMap,"heightmap.png");
-	loadImageArray(colorMapImg,colorMap,"colormap.png");
-	loadImageArray(buildingColorImg,bcolor,"buildingcolor.png");
-	loadImageArray(materialMapImg,materialMap,"materialmap.png");
+	loadImageArray(heightMapImg,heightMap,"../assets/heightmap.png");
+	loadImageArray(colorMapImg,colorMap,"../assets/colormap.png");
+	loadImageArray(buildingColorImg,bcolor,"../assets/buildingcolor.png");
+	loadImageArray(materialMapImg,materialMap,"../assets/materialmap.png");
 
 	mapWidth = heightMapImg.getSize().x;
 	mapHeight = heightMapImg.getSize().y;
@@ -47,7 +47,11 @@ void Map::set_pixel(std::vector<std::uint8_t>& pixel, int x, int y, std::uint8_t
 }
 void Map::DrawVerticalLine(int x, int top, int bottom, int screen_height, sf::Color color, int mx, int my, std::vector<Entity>& es)
 {
-    if (top < 0) top = 0;
+	int topb = top;
+    if (top < 0)
+	{
+		top = 0;
+	}
     if (bottom > screen_height) bottom = screen_height; 
 
 	uint8_t mat = materialMap[my * mapWidth + mx];
@@ -66,13 +70,11 @@ void Map::DrawVerticalLine(int x, int top, int bottom, int screen_height, sf::Co
 			}
 		}
 		if(blocked) continue;
-		
 		if(mat == 1)
 		{
-			float t = (float)(y - top) / columnHeight;
+			float t = (columnHeight > 0) ? (float)(y - topb) / columnHeight : 0.0f;
 			int texX = mx / 1 % 128;
-			int texY = ((int)heightMap[my * mapWidth + mx] + (y - top)) % 128;
-			// checkerboard for now to test
+			int texY = (int)(heightMap[my * mapWidth + mx] + t * 128) % 128;
             sf::Color texColor = bcolor[texY * 128 + texX];
 			set_pixel(pixel, x, y, texColor.r, texColor.g, texColor.b);
 		}
@@ -146,7 +148,6 @@ void Map::render(point p, float angle, float height, float horizon, float scale_
 			int my = ((int)pleft.y) % heightMapImg.getSize().y;
 			if (mx < 0) mx += heightMapImg.getSize().x;
 			if (my < 0) my += heightMapImg.getSize().y;
-
 			
 			heightOnScreen = (height - heightMap[my * mapWidth + mx]) / i * scale_height + horizon;
 			int top = (int)heightOnScreen;

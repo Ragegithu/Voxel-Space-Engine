@@ -21,8 +21,7 @@ int main()
 	Map map;
 	fPlayer player;
 
-	map.addEntity(512,512,"entity.png");
-	map.addEntity(512,312,"buildingcolor.png");
+	map.addEntity(0,0,"../assets/entity.png");
 
     while (window.isOpen())
     {
@@ -43,6 +42,13 @@ int main()
         float deltaTimeSeconds = std::min(std::max(deltaTime.asSeconds(), 0.f), 1.f);
 		window.setMouseCursorVisible(false);
 		window.setMouseCursorGrabbed(true);
+
+		for(Entity e : map.entities)
+		{
+			std::cout << e.ex << "e, " << e.ey << std::endl;
+		}
+
+		std::cout << player.pposition.x << "p, " << player.pposition.y << std::endl;
 
 		//handle FPS camera MOVE TO CAMERA CLASS
 		int mx = (int)player.pposition.x % map.mapWidth;

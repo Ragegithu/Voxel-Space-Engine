@@ -15,7 +15,7 @@ public:
     void CameraPosition(int mx, int my);
     void Update(float deltaTimeSeconds, sf::RenderWindow& window);
 
-    float pspeed =  100.f;
+    float pspeed =  300.f;
     float psens  = 0.003f;
 
 
