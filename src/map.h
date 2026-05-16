@@ -58,7 +58,7 @@ public:
     
     void set_pixel(std::vector<std::uint8_t>& pixel, int x, int y, std::uint8_t r, std::uint8_t g,std::uint8_t b);
 
-    void DrawVerticalLine(int x, int top,  int bottom, int screen_height, sf::Color color, int mx, int my,std::vector<Entity>& es);
+    void DrawVerticalLine(int x, int top,  int bottom, int screen_height, sf::Color color, int mx, int my, float dx, float dy,std::vector<Entity>& es);
     
     void render(point p, float angle, float height, float horizon, float scale_height, int distance, int screen_width, int screen_height, sf::RenderWindow& window);
 

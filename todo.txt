@@ -1,0 +1,5 @@
+1.FOG:
+float fog = min(distance / FOG_MAX, 1.0f);
+r = r + (fog_r - r) * fog;
+g = g + (fog_g - g) * fog;
+b = b + (fog_b - b) * fog;

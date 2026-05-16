@@ -45,7 +45,7 @@ void Map::set_pixel(std::vector<std::uint8_t>& pixel, int x, int y, std::uint8_t
 	pixel[index + 2] = b;
 	pixel[index + 3] = 255;
 }
-void Map::DrawVerticalLine(int x, int top, int bottom, int screen_height, sf::Color color, int mx, int my, std::vector<Entity>& es)
+void Map::DrawVerticalLine(int x, int top, int bottom, int screen_height, sf::Color color, int mx, int my,float dx, float dy, std::vector<Entity>& es)
 {
 	int topb = top;
     if (top < 0)
@@ -70,10 +70,12 @@ void Map::DrawVerticalLine(int x, int top, int bottom, int screen_height, sf::Co
 			}
 		}
 		if(blocked) continue;
-		if(mat == 1)
+		if(mat == 1 || mat == 4)
 		{
-			float t = (columnHeight > 0) ? (float)(y - topb) / columnHeight : 0.0f;
-			int texX = mx / 1 % 128;
+			float t = (columnHeight > 0) ? (float)(y - (bottom)) / columnHeight : 0.0f;
+			
+			//int texX = mx / 1 % 128;//(std::abs(dx) > std::abs(dy)) ? mx % 128 : my % 128;
+			int texX = (mat == 4) ? my % 128 : mx % 128;
 			int texY = (int)(heightMap[my * mapWidth + mx] + t * 128) % 128;
             sf::Color texColor = bcolor[texY * 128 + texX];
 			set_pixel(pixel, x, y, texColor.r, texColor.g, texColor.b);
@@ -154,7 +156,7 @@ void Map::render(point p, float angle, float height, float horizon, float scale_
 
 			if(top < ybuffer[j])
 			{
-    			DrawVerticalLine(j, top, ybuffer[j], screen_height, colorMap[my * mapWidth + mx],mx,my,entities);
+    			DrawVerticalLine(j, top, ybuffer[j], screen_height, colorMap[my * mapWidth + mx],mx,my,dx,dy,entities);
 				ybuffer[j] = top;
 			}
 			zbuffer[j] = i;
@@ -197,8 +199,12 @@ void Map::render(point p, float angle, float height, float horizon, float scale_
 }
 
 void Map::clearBuffer()
-{
-	std::fill(pixel.begin(), pixel.end(), 0);
+{    for(int i = 0; i < width * height * 4; i += 4) {
+        pixel[i+0] = 20;
+        pixel[i+1] = 20;
+        pixel[i+2] = 30;
+        pixel[i+3] = 255;
+    }
 	for(Entity& e : entities)
 		e.entityRendered = false;
 }
