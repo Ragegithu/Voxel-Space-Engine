@@ -69,6 +69,7 @@ public:
 
     std::vector<std::uint8_t> pixel; // pixel buffer
 
+
     int mapWidth;
     int mapHeight;
 

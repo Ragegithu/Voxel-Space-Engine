@@ -7,7 +7,7 @@ SEED        = np.random.randint(0, 9999)
 
 # --- Toggles ---
 GENERATE_CITY = False   # False = pure terrain, no buildings or roads
-TERRAIN_FLAT  = False   # False = generate noise-based heightmap terrain
+TERRAIN_FLAT  = False  # False = generate noise-based heightmap terrain
 
 # --- Material IDs ---
 MAT_TERRAIN    = 0
@@ -58,10 +58,8 @@ else:
         grid_w = int(width  / scale) + 2
         grid_h = int(height / scale) + 2
         grid   = rng.random((grid_h, grid_w))
-        # Wrap last row/col to first so the grid tiles with period (grid_w-1)
         grid[-1, :] = grid[0, :]
         grid[:, -1] = grid[:, 0]
-        # endpoint=False: pixel 0 -> grid 0, pixel W would -> grid (grid_w-1) = grid[0]
         xs = np.linspace(0, grid_w - 1, width,  endpoint=False)
         ys = np.linspace(0, grid_h - 1, height, endpoint=False)
         x0 = np.floor(xs).astype(int); x1 = np.minimum(x0 + 1, grid_w - 1)
@@ -91,7 +89,6 @@ def color_noise(w, h, scale, rng_):
     gw = int(w / scale) + 2
     gh = int(h / scale) + 2
     g  = rng_.random((gh, gw))
-    # Same tiling fix: wrap edges, sample with endpoint=False
     g[-1, :] = g[0, :]
     g[:, -1] = g[:, 0]
     xs = np.linspace(0, gw - 1, w, endpoint=False)
@@ -104,7 +101,6 @@ def color_noise(w, h, scale, rng_):
     bottom = g[np.ix_(y1, x0)] * (1 - fx) + g[np.ix_(y1, x1)] * fx
     return top * (1 - fy) + bottom * fy
 
-# Comanche-style terrain color ramp
 TERRAIN_RAMP = [
     (0.00, ( 30,  38,  18)),   # dark soil / deep valley
     (0.15, ( 45,  58,  25)),   # lowland grass

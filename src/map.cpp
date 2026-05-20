@@ -93,6 +93,7 @@ void Map::render(point p, float angle, float height, float horizon, float scale_
 	float dx,dy;
 	float heightOnScreen;
 
+
 	std::vector<int> ybuffer(screen_width, screen_height);
 	std::vector<float> zbuffer(screen_width, (float) distance);
 	std::vector<bool> entityPixel(screen_width * screen_height, false);
@@ -133,12 +134,12 @@ void Map::render(point p, float angle, float height, float horizon, float scale_
 
 	for(float i = 1; i < distance; i+= step)
 	{
-		
+		//fov 
 		pleft.x = (-cosine * i - sine * i) + p.x;
 		pleft.y = (sine * i - cosine * i ) + p.y;
 
-		pright.x = ( cosine*i - sine*i) + p.x;
-		pright.y = (-sine*i - cosine*i) + p.y;
+		pright.x = ( cosine * i - sine*i) + p.x;
+		pright.y = (-sine * i - cosine*i) + p.y;
 
 		dx = (pright.x - pleft.x) / screen_width;
 		dy = (pright.y - pleft.y) / screen_width;

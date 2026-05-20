@@ -3,3 +3,8 @@
 
 
 struct point{float x, y;};
+
+inline float nlerp(float a, float b, float t)
+{
+    return a + (b - a) * t;
+}
