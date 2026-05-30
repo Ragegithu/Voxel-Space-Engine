@@ -7,6 +7,7 @@
 #include <string>
 
 #include "ntypes.h"
+#include "conf.h"
 
 struct Entity
 {
@@ -54,11 +55,11 @@ public:
     void addEntity(float xpos, float ypos, std::string imageName);
 
     template<typename T>
-    void loadImageArray(sf::Image& image, std::vector<T>& buffer, std::string imageName);
+    void loadImageArray(sf::Image& image, std::vector<T>& buffer, std::string imageName, bool hmap/*is this a heightmap?*/);
     
     void set_pixel(std::vector<std::uint8_t>& pixel, int x, int y, std::uint8_t r, std::uint8_t g,std::uint8_t b);
 
-    void DrawVerticalLine(int x, int top,  int bottom, int screen_height, sf::Color color, int mx, int my, float dx, float dy,std::vector<Entity>& es);
+    void DrawVerticalLine(int x, int top,  int bottom, int screen_height, sf::Color color, int mx, int my, float dist,std::vector<Entity>& es);
     
     void render(point p, float angle, float height, float horizon, float scale_height, int distance, int screen_width, int screen_height, sf::RenderWindow& window);
 
@@ -73,8 +74,13 @@ public:
     int mapWidth;
     int mapHeight;
 
-    int width = 800;
-    int height = 800;
+    int width = 320;
+    int height = 180;
+
+    int fogStart = 500, fogEnd = 4000;
+    float fogFactor;
+
+    point3D skyColor;
 
     sf::Image heightMapImg, colorMapImg, materialMapImg;
 
@@ -93,7 +99,7 @@ public:
 };
 
 template <typename T>
-inline void Map::loadImageArray(sf::Image& image, std::vector<T>& buffer, std::string imageName)
+inline void Map::loadImageArray(sf::Image& image, std::vector<T>& buffer, std::string imageName, bool hmap/*is this a heightmap?*/)
 {
     if(!image.loadFromFile(imageName))
     {
@@ -116,5 +122,10 @@ inline void Map::loadImageArray(sf::Image& image, std::vector<T>& buffer, std::s
                 buffer[y * w + x] = image.getPixel(x,y).r;
             }
         }
+    }
+    if(hmap)
+    {
+	    mapWidth = w;
+	    mapHeight = h;
     }
 }

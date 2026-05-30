@@ -9,16 +9,6 @@ Map::Map()
 		std::cout << "failed to create pixel buffer" << std::endl;
 	}
 	sprite.setTexture(texture);
-
-
-
-	loadImageArray(heightMapImg,heightMap,"../assets/heightmap.png");
-	loadImageArray(colorMapImg,colorMap,"../assets/colormap.png");
-	loadImageArray(buildingColorImg,bcolor,"../assets/buildingcolor.png");
-	loadImageArray(materialMapImg,materialMap,"../assets/materialmap.png");
-
-	mapWidth = heightMapImg.getSize().x;
-	mapHeight = heightMapImg.getSize().y;
 }
 
 void Map::addEntity(float xpos, float ypos, std::string imageName)
@@ -27,7 +17,7 @@ void Map::addEntity(float xpos, float ypos, std::string imageName)
 	e.ex = xpos;
 	e.ey = ypos;
 	e.imageName = imageName;
-	loadImageArray(e.entityImg,e.entityColor,imageName);
+	loadImageArray(e.entityImg,e.entityColor,imageName,false);
 	entities.push_back(e);
 }
 
@@ -45,7 +35,7 @@ void Map::set_pixel(std::vector<std::uint8_t>& pixel, int x, int y, std::uint8_t
 	pixel[index + 2] = b;
 	pixel[index + 3] = 255;
 }
-void Map::DrawVerticalLine(int x, int top, int bottom, int screen_height, sf::Color color, int mx, int my,float dx, float dy, std::vector<Entity>& es)
+void Map::DrawVerticalLine(int x, int top, int bottom, int screen_height, sf::Color color, int mx, int my,float dist, std::vector<Entity>& es)
 {
 	int topb = top;
     if (top < 0)
@@ -72,17 +62,47 @@ void Map::DrawVerticalLine(int x, int top, int bottom, int screen_height, sf::Co
 		if(blocked) continue;
 		if(mat == 1 || mat == 4)
 		{
+			//draw stuff
 			float t = (columnHeight > 0) ? (float)(y - (bottom)) / columnHeight : 0.0f;
-			
-			//int texX = mx / 1 % 128;//(std::abs(dx) > std::abs(dy)) ? mx % 128 : my % 128;
 			int texX = (mat == 4) ? my % 128 : mx % 128;
 			int texY = (int)(heightMap[my * mapWidth + mx] + t * 128) % 128;
             sf::Color texColor = bcolor[texY * 128 + texX];
+			//fog stuff
+			fogFactor = std::clamp((fogEnd - dist) / (fogEnd - fogStart), 0.f,1.f);
+
+			texColor.r = texColor.r *fogFactor + skyColor.x * (1.f - fogFactor);
+			texColor.g = texColor.g *fogFactor + skyColor.y * (1.f - fogFactor);
+			texColor.b = texColor.b *fogFactor + skyColor.z * (1.f - fogFactor);
+
 			set_pixel(pixel, x, y, texColor.r, texColor.g, texColor.b);
+		}
+		else if(mat == 5)
+		{
+			int totalHeight = bottom - topb;
+			int headPixels = std::max(2,totalHeight/5);
+
+			sf::Color lampColor;
+			if(y < topb + headPixels)
+				lampColor = sf::Color(255, 220, 150);
+			else
+				lampColor = sf::Color(105,105,110);
+			    
+			fogFactor = std::clamp((fogEnd - dist) / (fogEnd - fogStart), 0.f, 1.f);
+    		lampColor.r = lampColor.r * fogFactor + skyColor.x * (1.f - fogFactor);
+    		lampColor.g = lampColor.g * fogFactor + skyColor.y * (1.f - fogFactor);
+    		lampColor.b = lampColor.b * fogFactor + skyColor.z * (1.f - fogFactor);
+
+    		set_pixel(pixel, x, y, lampColor.r, lampColor.g, lampColor.b);
 		}
 		else
 		{
 			//terrain
+
+			fogFactor = std::clamp((fogEnd - dist) / (fogEnd - fogStart), 0.f,1.f);
+
+			color.r = color.r *fogFactor + skyColor.x * (1.f - fogFactor);
+			color.g = color.g *fogFactor + skyColor.y * (1.f - fogFactor);
+			color.b = color.b *fogFactor + skyColor.z * (1.f - fogFactor);
 			set_pixel(pixel, x, y, color.r, color.g, color.b);
 		}
 	}
@@ -157,7 +177,7 @@ void Map::render(point p, float angle, float height, float horizon, float scale_
 
 			if(top < ybuffer[j])
 			{
-    			DrawVerticalLine(j, top, ybuffer[j], screen_height, colorMap[my * mapWidth + mx],mx,my,dx,dy,entities);
+    			DrawVerticalLine(j, top, ybuffer[j], screen_height, colorMap[my * mapWidth + mx],mx,my,i,entities);
 				ybuffer[j] = top;
 			}
 			zbuffer[j] = i;
@@ -201,9 +221,9 @@ void Map::render(point p, float angle, float height, float horizon, float scale_
 
 void Map::clearBuffer()
 {    for(int i = 0; i < width * height * 4; i += 4) {
-        pixel[i+0] = 20;
-        pixel[i+1] = 20;
-        pixel[i+2] = 30;
+        pixel[i+0] = skyColor.x;
+        pixel[i+1] = skyColor.y;
+        pixel[i+2] = skyColor.z;
         pixel[i+3] = 255;
     }
 	for(Entity& e : entities)

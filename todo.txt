@@ -3,3 +3,7 @@ float fog = min(distance / FOG_MAX, 1.0f);
 r = r + (fog_r - r) * fog;
 g = g + (fog_g - g) * fog;
 b = b + (fog_b - b) * fog;
+^DONE
+
+2. rename the map class to render and make a seperate struct/class called map that has all the textures and heightmaps.
+    easy for transitioning between levels/maps in general

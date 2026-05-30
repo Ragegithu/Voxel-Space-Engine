@@ -1,4 +1,4 @@
 #pragma once
 
-#define WIDTH 800
-#define HEIGHT 800
+#define WIDTH 1280.f
+#define HEIGHT 720.f

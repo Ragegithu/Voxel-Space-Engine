@@ -15,6 +15,7 @@ MAT_BUILDING_X = 1  # X-facing face (front/back) → use mx for texX
 MAT_ROAD       = 2
 MAT_SIDEWALK   = 3
 MAT_BUILDING_Y = 4  # Y-facing face (left/right) → use my for texX
+MAT_LAMP       = 5  # lamp post (pole + head)
 
 # --- Road / Block grid settings ---
 BLOCK_MIN       = 300    # min city block size (pixels) before road
@@ -29,6 +30,15 @@ BUILDING_MIN_H  = 20     # min height added to terrain
 BUILDING_MAX_H  = 110    # max height added to terrain
 BUILDING_GAP    = 10     # min gap between buildings in same block
 BASE_TERRAIN    = 130    # flat terrain height value
+
+# --- Lamp post settings ---
+LAMP_SPACING   = 400     # pixels between posts along a road
+LAMP_POLE_SIZE = 6       # pole footprint (pixels square)
+LAMP_HEAD_SIZE = 6       # light-head footprint (pixels square)
+LAMP_POLE_H    = 20      # pole height above BASE_TERRAIN
+LAMP_HEAD_H    = 1       # extra height of light head above pole
+POLE_COLOR     = (105, 105, 110)
+LIGHT_COLOR    = (255, 200, 80)
 
 # --- Colors ---
 ROAD_COLOR      = (45,  43,  40)
@@ -278,11 +288,64 @@ final_height[building_mask & sidewalk_mask] = BASE_TERRAIN + BUILDING_MIN_H
 final_height = np.clip(final_height, 0, 255).astype(np.uint8)
 
 # ------------------------------------------------------------------ #
+#  Lamp posts
+# ------------------------------------------------------------------ #
+print("Placing lamp posts...")
+
+lamp_pole_mask = np.zeros((HEIGHT, WIDTH), dtype=bool)
+lamp_head_mask = np.zeros((HEIGHT, WIDTH), dtype=bool)
+lamp_color_map = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
+
+_sw_offset = ROAD_WIDTH + SIDEWALK_WIDTH // 2   # centre of sidewalk strip
+
+def _place_lamp(cx, cy):
+    # --- pole ---
+    px0 = max(0, cx - LAMP_POLE_SIZE // 2)
+    px1 = min(WIDTH,  px0 + LAMP_POLE_SIZE)
+    py0 = max(0, cy - LAMP_POLE_SIZE // 2)
+    py1 = min(HEIGHT, py0 + LAMP_POLE_SIZE)
+    final_height[py0:py1, px0:px1] = BASE_TERRAIN + LAMP_POLE_H
+    lamp_pole_mask[py0:py1, px0:px1] = True
+    lamp_color_map[py0:py1, px0:px1] = POLE_COLOR
+    # --- light head (sits on top of pole) ---
+    hx0 = max(0, cx - LAMP_HEAD_SIZE // 2)
+    hx1 = min(WIDTH,  hx0 + LAMP_HEAD_SIZE)
+    hy0 = max(0, cy - LAMP_HEAD_SIZE // 2)
+    hy1 = min(HEIGHT, hy0 + LAMP_HEAD_SIZE)
+    final_height[hy0:hy1, hx0:hx1] = BASE_TERRAIN + LAMP_POLE_H + LAMP_HEAD_H
+    lamp_head_mask[hy0:hy1, hx0:hx1] = True
+    lamp_color_map[hy0:hy1, hx0:hx1] = LIGHT_COLOR
+
+# Along every vertical road (x_roads): posts on both sidewalk sides
+# Skip y positions that fall inside a horizontal road zone (intersection)
+_road_zone = ROAD_WIDTH + SIDEWALK_WIDTH
+for cx in x_roads:
+    for y in range(0, HEIGHT, LAMP_SPACING):
+        if any(abs(y - cy) < _road_zone for cy in y_roads):
+            continue
+        for lx in (cx - _sw_offset, cx + _sw_offset):
+            if 0 < lx < WIDTH:
+                _place_lamp(int(lx), y)
+
+# Along every horizontal road (y_roads): posts on both sidewalk sides
+# Skip x positions that fall inside a vertical road zone (intersection)
+for cy in y_roads:
+    for x in range(0, WIDTH, LAMP_SPACING):
+        if any(abs(x - cx) < _road_zone for cx in x_roads):
+            continue
+        for ly in (cy - _sw_offset, cy + _sw_offset):
+            if 0 < ly < HEIGHT:
+                _place_lamp(x, int(ly))
+
+lamp_mask = lamp_pole_mask | lamp_head_mask
+
+# ------------------------------------------------------------------ #
 #  Material map
 # ------------------------------------------------------------------ #
 print("Building material map...")
 material_map[road_mask     & ~building_mask] = MAT_ROAD
 material_map[sidewalk_mask & ~building_mask] = MAT_SIDEWALK
+material_map[lamp_mask]                      = MAT_LAMP
 
 # ------------------------------------------------------------------ #
 #  Shading
@@ -301,7 +364,7 @@ shade = np.clip(shade * 1.0 + 1.0, 0.3, 1.4)
 print("Generating colormap...")
 final_color = np.zeros((HEIGHT, WIDTH, 3), dtype=np.uint8)
 
-terrain_px = ~building_mask & ~road_mask & ~sidewalk_mask
+terrain_px = ~building_mask & ~road_mask & ~sidewalk_mask & ~lamp_mask
 
 cn  = color_noise(WIDTH, HEIGHT, 512, rng) * 0.5
 cn += color_noise(WIDTH, HEIGHT, 128, rng) * 0.3
@@ -336,6 +399,16 @@ for i, c in enumerate(ROAD_COLOR):
 swalk_px = sidewalk_mask & ~building_mask
 for i, c in enumerate(SIDEWALK_COLOR):
     final_color[swalk_px, i] = np.clip(c * shade[swalk_px], 0, 255).astype(np.uint8)
+
+# Lamp poles — shaded grey (engine overrides color via MAT_LAMP, but colormap still written for reference)
+pole_only = lamp_pole_mask & ~lamp_head_mask
+for ch in range(3):
+    final_color[pole_only, ch] = np.clip(
+        lamp_color_map[pole_only, ch].astype(np.float32) * shade[pole_only], 0, 255
+    ).astype(np.uint8)
+
+# Light heads — pure unshaded white
+final_color[lamp_head_mask] = LIGHT_COLOR
 
 # ------------------------------------------------------------------ #
 #  Save
