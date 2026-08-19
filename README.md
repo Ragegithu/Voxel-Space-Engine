@@ -23,11 +23,15 @@ Built in C++ with SFML, with procedural terrain and city generation.
 
 ```bash
 # clone the repo
-git clone https://github.com/Ragegithu/VoxelSpace
-cd VoxelSpace
+git clone --recurse-submodules https://github.com/Ragegithu/Voxel-Space-Engine
+cd Voxel-Space-Engine
 
-# build (cmake or whatever your build system is)
-cmake . && make
+# build (cmake)
+cmake -S . -B buildfolder
+cmake --build buildfolder
+
+#run
+cd buildfolder ./mygame
 ```
 
 ## Why Comanche
